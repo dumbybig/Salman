@@ -1,0 +1,273 @@
+app.background='darkseagreen'
+#Move with W A S D, get a boost and move speedier by pressing E,press the MOUSE BUTTON to fire a glock 18, hold mouse AND DRAG IT to power up a super laser,GET THE HIGHEST SCORE YOU CAN
+#Watch as the beatiful ai swarms you unprepared like a flock of wasps taking down its prey slowly and with much pain
+blood=Oval(200,200,50,105,fill='darkred',visible=False)
+stamina=Star(200,200,20,115,fill='yellow',border=gradient('lightyellow','yellow',start='center'),borderWidth=10,opacity=0)
+theme=Sound('cmu://733213/31082918/1-11.+Hydrogen+(Game+Mix)-[AudioTrimmer.com].mp3')
+BlastCharge=Sound('cmu://733213/31104512/Blaster+Sound+Effects++100+Royalty+Free++No+Copright+Strikes-[AudioTrimmer.com]+(2).mp3')
+BlastFire=Sound('cmu://733213/31106355/1-11.+Hydrogen+(Game+Mix)-[AudioTrimmer.com]-[AudioTrimmer.com]+(2).mp3')
+theme.play(loop=True)
+Death=Sound('cmu://733213/31106283/Splatoon+1,+2+&+3+-+All+Special+Weapons-[AudioTrimmer.com].mp3')
+arm1=Line(175,200,175,195,lineWidth=10,fill='blue')
+arm2=Line(225,200,225,205,lineWidth=10,fill='blue')
+p=Group(Circle(200,200,20),Rect(180,180,40,20),arm1,arm2,stamina)
+DIE=Circle(200,200,1,fill='gold',visible=False)
+DIE.a=False
+DIE.b=1
+DIE.unlock=False
+p.mutiwin=False
+arm1.dl=1
+arm1.dr=-1
+arm2.dl=1
+arm2.dr=-1
+p.m=1
+p.stam=20
+bullet=Group()
+blast=Line(1,1,200,200,lineWidth=3,fill=gradient('orange','yellow','red',start='center'),opacity=0)
+blast.a=False
+blast.b=False
+blast.k=False
+badGuy=Group()
+badGuy.amount=0
+p.dodge=False
+p.dodging=20
+p.regen=False
+p.kill=0
+p.health=100
+p.highscore=0
+s=Label('Score:',50,40,size=30)
+Score=Label(p.kill,140,40,size=30)
+h=Label('Health:',250,40,size=30,fill='red')
+Health=Label(p.health,330,40,size=30,fill='red')
+def armWalkSet():
+    a1,b1=getPointInDir(arm1.x1,arm1.y1,arm1.rotateAngle,3*arm1.dl)
+    a2,b2=getPointInDir(arm2.x1,arm2.y1,arm2.rotateAngle,3*arm1.dr)
+    arm1.x1=a1
+    arm1.y1=b1
+    arm2.x1=a2
+    arm2.y1=b2
+    arm1distance=distance(arm1.x1,arm1.y1,arm1.x2,arm1.y2)
+    if arm1distance>30:
+        arm1.dl*=-1
+        arm1.dr*=-1
+    pass
+def armReset():
+    a1,b1=getPointInDir(arm1.x2,arm1.y2,arm1.rotateAngle,5)
+    a2,b2=getPointInDir(arm2.x2,arm2.y2,arm2.rotateAngle,-5)
+    arm1.x1=a1
+    arm1.y1=b1
+    arm2.x1=a2
+    arm2.y1=b2
+    arm1.dl=1
+    arm1.dr=-1
+def spawnBadGuy():
+    x=randrange(1,401)
+    y=randrange(1,401)
+    spawndistance=distance(p.centerX,p.centerY,x,y)
+    print('i Tried')
+    if spawndistance>100:
+        badGuy.add(Star(x,y,10,12,fill='grey'))
+        badGuy.amount+=1
+def onMouseMove(x,y):
+    p.rotateAngle=angleTo(p.centerX,p.centerY,x,y)
+def onKeyHold(key):
+    if 'space'in key and DIE.unlock==True:
+        DIE.a=True
+    if 'e'in key and p.dodging>0 and blast.b==False:
+        p.m=3.5
+        p.stam-=4
+        p.dodging-=4
+    if 'w' in key and p.centerY>1:
+        p.centerY-=3*p.m
+    if 's'in key and p.centerY<399:
+        p.centerY+=3*p.m
+    if 'a'in key and p.centerX>1:
+        p.centerX-=3*p.m
+    if 'd'in key and p.centerX<399:
+        p.centerX+=3*p.m
+    armWalkSet()
+    
+def onKeyRelease(key):
+    armReset()
+    if 'z'in key:
+        p.m=1
+    if 'space'in key:
+        DIE.a=False
+def youWin():
+    p.fill='gold'
+    badGuy.clear()
+    badGuy.amount=0
+    if p.mutiwin==False:
+        a=Label('You WIN!!!',200,200,size=40,fill='gold',bold=True)
+        b=Label('Unlocked new ability',200,250,size=40)
+        c=Label('Hold Space to use',200,300,size=40,fill='gold')
+    else:
+        a=Label('YOU WIN, AGAIN!',200,200,size=40,fill='gold',bold=True)
+    sleep(5)
+    if p.mutiwin==False:
+        b.visible=False
+        c.visible=False
+        p.mutiwin=True
+    a.visible=False
+    DIE.unlock=True
+    p.kill=0
+    p.centerX=200
+    p.centerY=300
+def youLose():
+    s.visible=False
+    h.visible=False
+    Score.visible=False
+    Health.visible=False
+    blood.visible=True
+    blood.centerX=p.centerX
+    blood.centerY=p.centerY
+    x=randrange(1,361)
+    blood.rotateAngle=x
+    a=Rect(100,130,200,40,fill='red')
+    b=Label('You Died',200,150,size=50)
+    if p.kill>p.highscore:
+        c=Label('New HighScore',200,200,size=30)
+        p.highscore=p.kill
+    else:
+        c=Label('Your Score Was',200,200,size=30)
+    d=Label(p.kill,200,240,size=30)
+    sleep(2)
+    s.visible=True
+    h.visible=True
+    Score.visible=True
+    Health.visible=True
+    blood.visible=False
+    p.health=100
+    p.kill=0
+    a.visible=False
+    b.visible=False
+    c.visible=False
+    d.visible=False
+    badGuy.amount=0
+    p.centerX=200
+    p.centerY=200
+    badGuy.clear()
+    
+def gun():
+    a3,b3=getPointInDir(p.centerX,p.centerY,p.rotateAngle,15)
+    a4,b4=getPointInDir(p.centerX,p.centerY,p.rotateAngle,45)
+    bullet.add(Line(a3,b3,a4,b4,lineWidth=6,opacity=50,fill='orange'))
+def blaster():
+    a3,b3=getPointInDir(p.centerX,p.centerY,p.rotateAngle,15)
+    a4,b4=getPointInDir(p.centerX,p.centerY,p.rotateAngle,700)
+    blast.x1=a3
+    blast.y1=b3
+    blast.x2=a4
+    blast.y2=b4
+    if blast.a==True:
+        if blast.b==True:
+            p.m=0
+            if blast.opacity<100 and blast.opacity>=70:
+                blast.lineWidth+=1
+                blast.opacity+=1
+            if blast.opacity>99:
+                blast.k=True
+        elif blast.opacity<70:
+            blast.opacity+=2
+            p.m-=0.01
+        else:
+            blast.b=True
+    else:
+        blast.b=False
+        if p.m<1:
+            p.m+=0.05
+            blast.opacity-=1
+            if blast.lineWidth>3:
+                blast.lineWidth-=1
+        else:
+            blast.lineWidth=3
+            p.m=1
+            blast.opacity=0
+    pass
+def onMousePress(x,y):
+    gun()
+def onMouseDrag(x,y):
+    blaster()
+    blast.a=True
+def onMouseRelease(x,y):
+    blast.a=False
+def onStep():
+    Health.value=p.health
+    Score.value=p.kill
+    if p.dodging<1:
+        p.regen=True
+    if  p.regen==True:
+        p.stam+=0.5
+    if p.stam>20:
+       p.dodging=p.stam
+       p.regen=False
+    spawn=randrange(1,1000)
+    if spawn<40 and badGuy.amount<6:
+        spawnBadGuy()
+    for i in bullet.children:
+        a5,b5=getPointInDir(i.centerX,i.centerY,p.rotateAngle,30)
+        i.centerX=a5
+        i.centerY=b5
+        if i.centerX>400 or i.centerX<0 or i.centerY>400 or i.centerY<0:
+            bullet.remove(i)
+    if blast.a==False:
+        blaster()
+    for i in badGuy.children:
+        i.c=3
+        i.d=0
+        i.e=0
+        i.bo=False
+        i.lrange=distance(i.centerX,i.centerY,p.centerX,p.centerY)
+        if i.lrange<70:
+            i.bo=True
+        if i.bo==True:
+            i.c=9
+        else:
+            i.c=3
+            i.rotateAngle=angleTo(i.centerX,i.centerY,p.centerX,p.centerY)
+        i.a,i.b=getPointInDir(i.centerX,i.centerY,i.rotateAngle,i.c)
+        i.centerX=i.a
+        i.centerY=i.b
+        if p.hitsShape(i)==True:
+            p.health-=1
+        if blast.hitsShape(i)==True and blast.opacity>80:
+            badGuy.remove(i)
+            badGuy.amount-=1
+            p.kill+=100
+        if DIE.hitsShape(i)==True and DIE.visible==True:
+            badGuy.remove(i)
+            badGuy.amount-=1
+            if p.health<100:
+                p.health+=1
+        for j in bullet.children:
+            if j.hitsShape(i)==True:
+                badGuy.remove(i)
+                badGuy.amount-=1
+                p.kill+=50
+                p.health+=4
+                if p.health>100:
+                    p.health=100
+    if DIE.a==True:
+        DIE.visible=True
+        DIE.radius+=0.75
+        p.toFront()
+    else:
+        if DIE.radius>5:
+            DIE.b*=1.01
+            DIE.radius-=0.75+DIE.b
+        else:
+            DIE.radius=1
+            DIE.visible=False
+            DIE.b=1
+    DIE.centerX=p.centerX
+    DIE.centerY=p.centerY
+    if p.dodging>0:
+        stamina.opacity=p.dodging*2
+    if p.health<=0:
+        p.health=0
+        youLose()
+    if p.kill>=5000:
+        Score.value=p.kill
+        youWin()
+
+        
