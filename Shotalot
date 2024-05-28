@@ -2,6 +2,10 @@ app.background='darkseagreen'
 #Move with W A S D, get a boost and move speedier by pressing E,press the MOUSE BUTTON to fire a glock 18, hold mouse AND DRAG IT to power up a super laser,GET THE HIGHEST SCORE YOU CAN
 #Watch as the beatiful ai swarms you unprepared like a flock of wasps taking down its prey slowly and with much pain
 blood=Oval(200,200,50,105,fill='darkred',visible=False)
+feu=Circle(200,200,50,opacity=0)
+hitbox=Circle(200,200,30,opacity=0)
+styleLabel=Label('Double kill',0,0,font='orbitron',fill='grey',opacity=0,size=40)
+dodgelabel=Label('Sick Dodge',200,200,size=25,bold=True,fill='gold',opacity=0)
 stamina=Star(200,200,20,115,fill='yellow',border=gradient('lightyellow','yellow',start='center'),borderWidth=10,opacity=0)
 theme=Sound('cmu://733213/31082918/1-11.+Hydrogen+(Game+Mix)-[AudioTrimmer.com].mp3')
 BlastCharge=Sound('cmu://733213/31104512/Blaster+Sound+Effects++100+Royalty+Free++No+Copright+Strikes-[AudioTrimmer.com]+(2).mp3')
@@ -10,25 +14,33 @@ theme.play(loop=True)
 Death=Sound('cmu://733213/31106283/Splatoon+1,+2+&+3+-+All+Special+Weapons-[AudioTrimmer.com].mp3')
 arm1=Line(175,200,175,195,lineWidth=10,fill='blue')
 arm2=Line(225,200,225,205,lineWidth=10,fill='blue')
-p=Group(Circle(200,200,20),Rect(180,180,40,20),arm1,arm2,stamina)
+styleLabel.ultra=False
+p=Group(Circle(200,200,20),Rect(180,180,40,20),arm1,arm2,stamina,dodgelabel,hitbox)
+p.shot=0
 DIE=Circle(200,200,1,fill='gold',visible=False)
 DIE.a=False
 DIE.b=1
 DIE.unlock=False
-p.mutiwin=False
+p.won=False
+p.dodged=False
 arm1.dl=1
 arm1.dr=-1
 arm2.dl=1
 arm2.dr=-1
+feu.a=False
+feu.b=10
 p.m=1
 p.stam=20
 bullet=Group()
+bullet.a=0
 blast=Line(1,1,200,200,lineWidth=3,fill=gradient('orange','yellow','red',start='center'),opacity=0)
 blast.a=False
 blast.b=False
 blast.k=False
 badGuy=Group()
 badGuy.amount=0
+badGuy.x=0
+badGuy.y=0
 p.dodge=False
 p.dodging=20
 p.regen=False
@@ -39,6 +51,16 @@ s=Label('Score:',50,40,size=30)
 Score=Label(p.kill,140,40,size=30)
 h=Label('Health:',250,40,size=30,fill='red')
 Health=Label(p.health,330,40,size=30,fill='red')
+badGuy.allowed=6
+#badGuy.allowed=int(app.getTextInput('What is the maximun about of enemies that should spawn?'))
+#uncomment this part to customize the maximun amount of enemies^^^
+def changeKilLabel(message,color,font,bold):
+    styleLabel.opacity=100
+    styleLabel.fill=color
+    styleLabel.bold=bold 
+    styleLabel.value=message
+    styleLabel.centerX=badGuy.x
+    styleLabel.centerY=badGuy.y
 def armWalkSet():
     a1,b1=getPointInDir(arm1.x1,arm1.y1,arm1.rotateAngle,3*arm1.dl)
     a2,b2=getPointInDir(arm2.x1,arm2.y1,arm2.rotateAngle,3*arm1.dr)
@@ -64,7 +86,6 @@ def spawnBadGuy():
     x=randrange(1,401)
     y=randrange(1,401)
     spawndistance=distance(p.centerX,p.centerY,x,y)
-    print('i Tried')
     if spawndistance>100:
         badGuy.add(Star(x,y,10,12,fill='grey'))
         badGuy.amount+=1
@@ -73,10 +94,13 @@ def onMouseMove(x,y):
 def onKeyHold(key):
     if 'space'in key and DIE.unlock==True:
         DIE.a=True
-    if 'e'in key and p.dodging>0 and blast.b==False:
+    if 'e'in key and p.dodging>0 and blast.a==False:
         p.m=3.5
         p.stam-=4
         p.dodging-=4
+        p.dodged=True
+    else:
+        p.dodged=False
     if 'w' in key and p.centerY>1:
         p.centerY-=3*p.m
     if 's'in key and p.centerY<399:
@@ -97,20 +121,15 @@ def youWin():
     p.fill='gold'
     badGuy.clear()
     badGuy.amount=0
-    if p.mutiwin==False:
-        a=Label('You WIN!!!',200,200,size=40,fill='gold',bold=True)
-        b=Label('Unlocked new ability',200,250,size=40)
-        c=Label('Hold Space to use',200,300,size=40,fill='gold')
-    else:
-        a=Label('YOU WIN, AGAIN!',200,200,size=40,fill='gold',bold=True)
+    a=Label('You WIN!!!',200,200,size=40,fill='gold',bold=True)
+    b=Label('Unlocked new ability',200,250,size=40)
+    c=Label('Hold Space to use',200,300,size=40,fill='gold')
     sleep(5)
-    if p.mutiwin==False:
-        b.visible=False
-        c.visible=False
-        p.mutiwin=True
+    b.visible=False
+    c.visible=False
+    p.won=True
     a.visible=False
     DIE.unlock=True
-    p.kill=0
     p.centerX=200
     p.centerY=300
 def youLose():
@@ -132,20 +151,20 @@ def youLose():
         c=Label('Your Score Was',200,200,size=30)
     d=Label(p.kill,200,240,size=30)
     sleep(2)
+    p.kill=0
     s.visible=True
     h.visible=True
     Score.visible=True
     Health.visible=True
     blood.visible=False
     p.health=100
-    p.kill=0
     a.visible=False
     b.visible=False
     c.visible=False
     d.visible=False
-    badGuy.amount=0
     p.centerX=200
-    p.centerY=200
+    p.centerY=300
+    badGuy.amount=0
     badGuy.clear()
     
 def gun():
@@ -186,6 +205,7 @@ def blaster():
     pass
 def onMousePress(x,y):
     gun()
+    p.shot=p.rotateAngle
 def onMouseDrag(x,y):
     blaster()
     blast.a=True
@@ -202,14 +222,27 @@ def onStep():
        p.dodging=p.stam
        p.regen=False
     spawn=randrange(1,1000)
-    if spawn<40 and badGuy.amount<6:
+    if spawn<40 and badGuy.amount<badGuy.allowed:
         spawnBadGuy()
     for i in bullet.children:
-        a5,b5=getPointInDir(i.centerX,i.centerY,p.rotateAngle,30)
+        a5,b5=getPointInDir(i.centerX,i.centerY,p.shot,30)
         i.centerX=a5
         i.centerY=b5
         if i.centerX>400 or i.centerX<0 or i.centerY>400 or i.centerY<0:
             bullet.remove(i)
+            if bullet.a==2:
+                changeKilLabel('Double Kill','grey','orbitron',False)
+            elif bullet.a==3:
+                changeKilLabel('Triple Kill','powderblue','monospace',False)
+            elif bullet.a==4:
+                changeKilLabel('Quadruple Kill','crimson','grenze',True)
+            if bullet.a>4:
+                changeKilLabel('UltraKill','gold','montserrat',True)
+                styleLabel.ultra=True
+            else:
+                styleLabel.ultra=False
+            bullet.a=0
+            
     if blast.a==False:
         blaster()
     for i in badGuy.children:
@@ -228,8 +261,20 @@ def onStep():
         i.a,i.b=getPointInDir(i.centerX,i.centerY,i.rotateAngle,i.c)
         i.centerX=i.a
         i.centerY=i.b
-        if p.hitsShape(i)==True:
+        if p.containsShape(i)==True:
+            p.health-=3
+            feu.b=10
+        if hitbox.hitsShape(i)==True:
             p.health-=1
+            feu.b=10
+        if feu.hitsShape(i)==True and hitbox.hitsShape(i)==False:
+            feu.a=True
+        elif feu.b>0:
+            feu.a=False
+        if feu.a==True and feu.b==0 and feu.hitsShape(i)==False and p.stam>0 and p.dodged==True:
+            dodgelabel.opacity=100
+            feu.a=False
+            
         if blast.hitsShape(i)==True and blast.opacity>80:
             badGuy.remove(i)
             badGuy.amount-=1
@@ -241,10 +286,16 @@ def onStep():
                 p.health+=1
         for j in bullet.children:
             if j.hitsShape(i)==True:
+                badGuy.x=i.centerX
+                badGuy.y=i.centerY
+                bullet.a+=1
                 badGuy.remove(i)
                 badGuy.amount-=1
-                p.kill+=50
-                p.health+=4
+                if bullet.a<5:
+                    p.kill+=50*bullet.a
+                else:
+                    p.kill+=200*bullet.a
+                p.health+=4//bullet.a
                 if p.health>100:
                     p.health=100
     if DIE.a==True:
@@ -252,7 +303,7 @@ def onStep():
         DIE.radius+=0.75
         p.toFront()
     else:
-        if DIE.radius>5:
+        if DIE.radius>15:
             DIE.b*=1.01
             DIE.radius-=0.75+DIE.b
         else:
@@ -266,8 +317,20 @@ def onStep():
     if p.health<=0:
         p.health=0
         youLose()
-    if p.kill>=5000:
+    if p.kill>=10000 and p.won==False:
         Score.value=p.kill
         youWin()
-
-        
+    feu.centerX=p.centerX
+    feu.centerY=p.centerY
+    dodgelabel.rotateAngle=0
+    if feu.b>0:
+        feu.b-=1
+    if dodgelabel.opacity>0:
+        dodgelabel.opacity-=4
+    if styleLabel.opacity>0:
+        if styleLabel.opacity<3:
+            styleLabel.opacity=0
+        elif styleLabel.ultra==False:
+            styleLabel.opacity-=4
+        else:
+            styleLabel.opacity-=1
