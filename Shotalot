@@ -47,20 +47,26 @@ p.regen=False
 p.kill=0
 p.health=100
 p.highscore=0
+p.walking=False
 s=Label('Score:',50,40,size=30)
 Score=Label(p.kill,140,40,size=30)
 h=Label('Health:',250,40,size=30,fill='red')
 Health=Label(p.health,330,40,size=30,fill='red')
+nade=Group()
+fuse=Group()
+boom=Group()
+fuse.timer=0
+boom.a=1
 badGuy.allowed=6
-#badGuy.allowed=int(app.getTextInput('What is the maximun about of enemies that should spawn?'))
+badGuy.allowed=int(app.getTextInput('What is the maximun about of enemies that should spawn?'))
 #uncomment this part to customize the maximun amount of enemies^^^
-def changeKilLabel(message,color,font,bold):
+def changeKilLabel(x,y,message,color,font,bold):
     styleLabel.opacity=100
     styleLabel.fill=color
     styleLabel.bold=bold 
     styleLabel.value=message
-    styleLabel.centerX=badGuy.x
-    styleLabel.centerY=badGuy.y
+    styleLabel.centerX=x
+    styleLabel.centerY=y
 def armWalkSet():
     a1,b1=getPointInDir(arm1.x1,arm1.y1,arm1.rotateAngle,3*arm1.dl)
     a2,b2=getPointInDir(arm2.x1,arm2.y1,arm2.rotateAngle,3*arm1.dr)
@@ -109,10 +115,16 @@ def onKeyHold(key):
         p.centerX-=3*p.m
     if 'd'in key and p.centerX<399:
         p.centerX+=3*p.m
-    armWalkSet()
-    
+    if  'd'in key or 's'in key or 'a' in key or 'w'in key:
+        armWalkSet()  
+    else:
+        p.walking=True
+def onKeyPress(key):
+    if 'g'in key and fuse.timer<1:
+        grenade()
 def onKeyRelease(key):
-    armReset()
+    if  'd'in key or 's'in key or 'a' in key or 'w'in key and p.walking==True:
+        armReset()
     if 'z'in key:
         p.m=1
     if 'space'in key:
@@ -166,7 +178,12 @@ def youLose():
     p.centerY=300
     badGuy.amount=0
     badGuy.clear()
-    
+    nade.clear()
+def grenade():
+    nade.add(Circle(p.centerX,p.centerY,7,fill=gradient('gainsboro','black','black',start='top-left')))
+    fuse.add(Line(p.centerX,p.centerY-5,p.centerX,p.centerY-12,fill=gradient('orange','burlywood',start='top')))
+    nade.add(fuse)
+    fuse.timer=70
 def gun():
     a3,b3=getPointInDir(p.centerX,p.centerY,p.rotateAngle,15)
     a4,b4=getPointInDir(p.centerX,p.centerY,p.rotateAngle,45)
@@ -231,13 +248,13 @@ def onStep():
         if i.centerX>400 or i.centerX<0 or i.centerY>400 or i.centerY<0:
             bullet.remove(i)
             if bullet.a==2:
-                changeKilLabel('Double Kill','grey','orbitron',False)
+                changeKilLabel(badGuy.x,badGuy.y,'Double Kill','grey','orbitron',False)
             elif bullet.a==3:
-                changeKilLabel('Triple Kill','powderblue','monospace',False)
+                changeKilLabel(badGuy.x,badGuy.y,'Triple Kill','powderblue','monospace',False)
             elif bullet.a==4:
-                changeKilLabel('Quadruple Kill','crimson','grenze',True)
+                changeKilLabel(badGuy.x,badGuy.y,'Quadruple Kill','crimson','grenze',True)
             if bullet.a>4:
-                changeKilLabel('UltraKill','gold','montserrat',True)
+                changeKilLabel(badGuy.x,badGuy.y,'UltraKill','gold','montserrat',True)
                 styleLabel.ultra=True
             else:
                 styleLabel.ultra=False
@@ -245,6 +262,21 @@ def onStep():
             
     if blast.a==False:
         blaster()
+    for i in nade.children:
+        for l in fuse.children:
+            if l.opacity!=0:
+                l.y2+=0.05   
+                l.opacity-=1
+            else:
+                boom.add(Circle(i.centerX,i.centerY,60,fill='darkorange'))
+                nade.clear(i)
+                fuse.clear(l)
+    for i in boom.children:
+        if i.opacity>2:
+            i.opacity-=3
+        else:
+            boom.remove(i)
+            
     for i in badGuy.children:
         i.c=3
         i.d=0
@@ -274,7 +306,25 @@ def onStep():
         if feu.a==True and feu.b==0 and feu.hitsShape(i)==False and p.stam>0 and p.dodged==True:
             dodgelabel.opacity=100
             feu.a=False
-            
+        for l in boom.children:
+            if l.hitsShape(i)==True and l.opacity>=75:
+                badGuy.remove(i)
+                boom.a*=3
+                p.kill+=10*boom.a
+                badGuy.amount-=1
+            if l.opacity<75:
+                boom.a=1
+            if boom.a==9:
+                changeKilLabel(l.centerX,l.centerY,'Double Kill','grey','orbitron',False)
+            elif boom.a==27:
+                changeKilLabel(l.centerX,l.centerY,'Triple Kill','powderblue','monospace',False)
+            elif boom.a==81:
+                changeKilLabel(l.centerX,l.centerY,'Quadruple Kill','crimson','grenze',True)
+            if boom.a>81:
+                changeKilLabel(l.centerX,l.centerY,'UltraKill','gold','montserrat',True)
+                styleLabel.ultra=True
+            else:
+                styleLabel.ultra=False
         if blast.hitsShape(i)==True and blast.opacity>80:
             badGuy.remove(i)
             badGuy.amount-=1
@@ -298,6 +348,9 @@ def onStep():
                 p.health+=4//bullet.a
                 if p.health>100:
                     p.health=100
+    for i in boom.children:
+        if hitbox.hitsShape(i)==True and i.opacity>=75:
+                p.health-=4
     if DIE.a==True:
         DIE.visible=True
         DIE.radius+=0.75
@@ -328,9 +381,11 @@ def onStep():
     if dodgelabel.opacity>0:
         dodgelabel.opacity-=4
     if styleLabel.opacity>0:
-        if styleLabel.opacity<3:
+        if styleLabel.opacity<4:
             styleLabel.opacity=0
         elif styleLabel.ultra==False:
             styleLabel.opacity-=4
         else:
             styleLabel.opacity-=1
+    if fuse.timer>0:
+        fuse.timer-=1
