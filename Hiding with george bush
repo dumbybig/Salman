@@ -1,0 +1,144 @@
+#Controls-Dino W,A,S,D to move  Human W,A,S,D to move and aim with mouse and click to shoot
+#Notes for players, The human player randomly spawns around the map, the dino must have it's center inside a bush to "camoflauge"
+#THIS GAME IS PLAYED WITH 2 PLAYERS WITH PLAYER 1 SHEILDING THE SCREEN FROM PLAYER 2's VIEW TILL THERE TURN
+#The player Should shoot as long as possible with there aimsight trying to get as many bushes as they can in the line they produce
+#the Dino should try and place themselfs ina possition where they can avoid the humans shots and/or try and catch them!
+#FINAL DISCLAIMER, if you appear on top of were the dino happened to be then you got unlucky, try again, Made with the cmu cs library
+e=''
+app.background='green'
+b=Sound('cmu://733213/25842887/desert-eagle-gunshot-14622.mp3')
+ahh=Sound('cmu://733213/27359534/murder-scream-loud_C#_major.wav')
+app.stepsPerSecond=30
+spawn=randrange(20,380)
+pawn=randrange(20,380)
+start=10
+ammo=4
+introLabel=Label('Hide as the Dino and try to ambush the human',200,40,size=15,visible=False)
+ammoLabel=Label(ammo,380,20,size=20,visible=False)
+bullet=Line(200,40,200,400,opacity=0)
+app.counter=-1
+timerLabel=Label(15,20,20,size=20,visible=False)
+Human=Circle(spawn,pawn,10,fill='tan',visible=False)
+#Human=Image('cmu://733213/29438866/t_500x300.jpeg',spawn,pawn,visible=False,width=60,height=60)
+Bush=Group()
+Startb=Group(Rect(100,100,200,200,fill='darkolivegreen',border='tan'),Label('START',200,200,size=35))
+mod=Group(Rect(0,340,100,60,fill='darkgreen',border='tan'),Label('Modify bush amount',50,370,size=10))
+se=Group(Rect(300,340,100,60,fill='red',border='white'),Label('Code?',350,370,size=15,fill='blue'))
+q=25
+def createLand(x,y):
+    if e=='George':
+        Bush.add(Image('cmu://733213/29438866/t_500x300.jpeg',x-20,y-20,height=70,width=70))
+    else:
+        Bush.add(Oval(x,y,60,55,fill='darkOliveGreen'))
+    #Modify the amount of "Bushes", in the for i in range function and changing the number in the ()
+killthing=Polygon(160,145,180,170,220,170,240,145,opacity=10)
+Raptard=Group(Oval(200,200,20,45),Oval(200,170,15,25),Oval(200,230,10,50),Oval(195,205,14,30),Oval(205,205,14,30),killthing)
+Raptard.visible=False
+def onKeyHold(key):
+    if app.counter==0:
+        if 'w' in key and Raptard.centerY>1:
+            Raptard.centerY-=2
+        if 's'in key and Raptard.centerY<399:
+            Raptard.centerY+=2
+        if 'a'in key and Raptard.centerX>1:
+            Raptard.centerX-=2
+        if 'd'in key and Raptard.centerX<399:
+            Raptard.centerX+=2
+        if 'c'in key:
+            Raptard.rotateAngle+=3
+    else:
+        if 'w' in key and Human.centerY>1:
+            Human.centerY-=2
+        if 's'in key and Human.centerY<399:
+            Human.centerY+=2
+        if 'a'in key and Human.centerX>1:
+            Human.centerX-=2
+        if 'd'in key and Human.centerX<399:
+            Human.centerX+=2
+def onMouseMove(mouseX,mouseY):
+    if Startb.hits(mouseX,mouseY)==True:
+        Startb.opacity=50
+    else:
+        Startb.opacity=100
+    if mod.hits(mouseX,mouseY)==True:
+        mod.opacity=50
+    else:
+        mod.opacity=100
+    if se.hits(mouseX,mouseY)==True:
+        se.opacity=50
+    else:
+        se.opacity=100
+    if app.counter>0:
+        bullet.opacity=10
+        bullet.x2=mouseX
+        bullet.y2=mouseY
+def onMousePress(mouseX,mouseY):
+    global ammo,q,e
+    if app.counter<0:
+        if Startb.hits(mouseX,mouseY)==True:
+            app.counter=0
+            for i in range(q):
+                sal=randrange(20,380)
+                pal=randrange(20,380)
+                createLand(sal,pal)
+                Bush.toBack()
+        if mod.hits(mouseX,mouseY)==True:
+            q=int(app.getTextInput('How many bushes?'))
+        if se.hits(mouseX,mouseY)==True:
+            e=str(app.getTextInput('Whats the code?'))
+    if app.counter==1:
+        b.play(loop=False)
+        ammo=ammo-1    
+        ammoLabel.value=ammo
+        if bullet.hitsShape(Raptard):
+            Label('Gottem',200,200,size=30)
+            sleep(0.5)
+            app.stop()
+        elif ammo==0:
+            Label('Loser',200,200,size=30)
+            Raptard.centerX=Human.centerX
+            Raptard.centerY=Human.centerY
+            Raptard.opacity=100
+            killthing.opacity=0
+            ahh.play(loop=False)
+            sleep(1)
+            app.stop()
+def onStep():
+    global start
+    bullet.x1=Human.centerX
+    bullet.y1=Human.centerY
+    if app.counter>-1:
+        Raptard.visible=True
+        timerLabel.visible=True
+        introLabel.visible=True
+        Startb.visible=False
+        mod.visible=False
+        se.visible=False
+        timerLabel.toFront()
+        ammoLabel.toFront()
+        introLabel.toFront()
+        if timerLabel.value>=0:
+            start-=0.03
+            timerLabel.value=rounded(start)
+        else:
+            app.counter=1
+            ammoLabel.visible=True
+            introLabel.value='Kill the dinosaur and try to avoid were he might be!'
+            if introLabel.opacity>0:
+                introLabel.opacity=introLabel.opacity-1
+            timerLabel.visible=False
+            Human.visible=True
+            if Bush.hits(Raptard.centerX,Raptard.centerY)==True:
+                Raptard.opacity=0
+            if Raptard.hitsShape(Human)==True:
+                Label('Loser',200,200,size=60)
+                Raptard.centerX=Human.centerX
+                Raptard.centerY=Human.centerY
+                Raptard.opacity=100
+                killthing.opacity=0
+                ahh.play(loop=False)
+                sleep(1)
+                app.stop()
+            
+        pass
+    
