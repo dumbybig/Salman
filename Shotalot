@@ -1,6 +1,5 @@
 app.background='darkseagreen'
-#Move with W A S D, get a boost and move speedier by pressing E,press the MOUSE BUTTON to fire a glock 18, hold mouse AND DRAG IT to power up a super laser,GET THE HIGHEST SCORE YOU CAN
-#Watch as the beatiful ai swarms you unprepared like a flock of wasps taking down its prey slowly and with much pain
+#Move with W A S D, get a boost and move speedier by pressing E,press the MOUSE BUTTON to fire a glock 18, hold mouse AND DRAG IT to power up a super laser,GET THE HIGHEST SCORE YOU CAN!!! Made with the cmu cs library
 blood=Oval(200,200,50,105,fill='darkred',visible=False)
 feu=Circle(200,200,50,opacity=0)
 hitbox=Circle(200,200,30,opacity=0)
@@ -22,6 +21,7 @@ DIE.a=False
 DIE.b=1
 DIE.unlock=False
 p.won=False
+p.regentimer=15
 p.dodged=False
 arm1.dl=1
 arm1.dr=-1
@@ -30,7 +30,6 @@ arm2.dr=-1
 feu.a=False
 feu.b=10
 p.m=1
-p.stam=20
 bullet=Group()
 bullet.a=0
 blast=Line(1,1,200,200,lineWidth=3,fill=gradient('orange','yellow','red',start='center'),opacity=0)
@@ -59,6 +58,7 @@ fuse.timer=0
 boom.a=1
 badGuy.allowed=6
 badGuy.allowed=int(app.getTextInput('What is the maximun about of enemies that should spawn?'))
+styleLabel.y=False
 #uncomment this part to customize the maximun amount of enemies^^^
 def changeKilLabel(x,y,message,color,font,bold):
     styleLabel.opacity=100
@@ -67,6 +67,10 @@ def changeKilLabel(x,y,message,color,font,bold):
     styleLabel.value=message
     styleLabel.centerX=x
     styleLabel.centerY=y
+    if styleLabel.centerY<60:
+        styleLabel.y=False
+    else:
+        styleLabel.y=True
 def armWalkSet():
     a1,b1=getPointInDir(arm1.x1,arm1.y1,arm1.rotateAngle,3*arm1.dl)
     a2,b2=getPointInDir(arm2.x1,arm2.y1,arm2.rotateAngle,3*arm1.dr)
@@ -102,9 +106,9 @@ def onKeyHold(key):
         DIE.a=True
     if 'e'in key and p.dodging>0 and blast.a==False:
         p.m=3.5
-        p.stam-=4
         p.dodging-=4
         p.dodged=True
+        p.regentimer=20
     else:
         p.dodged=False
     if 'w' in key and p.centerY>1:
@@ -221,8 +225,8 @@ def blaster():
             blast.opacity=0
     pass
 def onMousePress(x,y):
-    gun()
     p.shot=p.rotateAngle
+    gun()
 def onMouseDrag(x,y):
     blaster()
     blast.a=True
@@ -231,12 +235,11 @@ def onMouseRelease(x,y):
 def onStep():
     Health.value=p.health
     Score.value=p.kill
-    if p.dodging<1:
+    if p.dodging<20 and p.regentimer==0:
         p.regen=True
     if  p.regen==True:
-        p.stam+=0.5
-    if p.stam>20:
-       p.dodging=p.stam
+        p.dodging+=0.5
+    if p.dodging>20:
        p.regen=False
     spawn=randrange(1,1000)
     if spawn<40 and badGuy.amount<badGuy.allowed:
@@ -303,7 +306,7 @@ def onStep():
             feu.a=True
         elif feu.b>0:
             feu.a=False
-        if feu.a==True and feu.b==0 and feu.hitsShape(i)==False and p.stam>0 and p.dodged==True:
+        if feu.a==True and feu.b==0 and feu.hitsShape(i)==False and p.dodged==True:
             dodgelabel.opacity=100
             feu.a=False
         for l in boom.children:
@@ -351,6 +354,8 @@ def onStep():
     for i in boom.children:
         if hitbox.hitsShape(i)==True and i.opacity>=75:
                 p.health-=4
+                if p.health<1:
+                    p.kill=0
     if DIE.a==True:
         DIE.visible=True
         DIE.radius+=0.75
@@ -389,3 +394,10 @@ def onStep():
             styleLabel.opacity-=1
     if fuse.timer>0:
         fuse.timer-=1
+    if styleLabel.y==True:
+        styleLabel.centerY-=2
+    else:
+        styleLabel.centerY+=2
+    if p.regentimer>0:
+        p.regentimer-=1
+    
