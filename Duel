@@ -1,4 +1,4 @@
-#player1 first aim then player2 aim, after mash according keys then click according "shoot"key well 
+#player1 first aim then player2 aim, after mash according keys then click according "shoot"key well, made with the cmu cs library. 
 #6 takes away instructions  = resets aiming  ` turns off music
 m=Sound('cmu://733213/25920778/36+Icarus+And+Friends-[AudioTrimmer.com]+(1).mp3')
 m.play(loop=True)
